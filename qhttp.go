@@ -8,13 +8,14 @@ import (
 	"runtime"
 	"os"
 	"bufio"
+	"strings"
 )
 
 // Command line flags.
 
 var (
 	inputFileName = flag.String("f", "", "read urls from file")
-	getHeaders	  = flag.String("H", "Server", "Which header(s) to show")
+	getHeaders    = flag.String("H", "Server", "Which header(s) to show")
 	numCores      = flag.Int("n", 2, "number of CPU cores to use")
 	verbose       = flag.Bool("v", false, "verbose")
 )
@@ -48,9 +49,26 @@ func geturl_head(num int, url string, c chan *result) {
 
 	defer response.Body.Close()
 
-	// Will be empty if no Server header is recieved
-	server := response.Header.Get("Server")
-	c <- &result{num, url, response.Status, server}
+	//Get headers to get from flag 
+	headers := strings.Split(*getHeaders, " ")
+	res := "["
+	first := true
+	for _, h := range headers {
+		// Will be empty if no Server header is recieved
+		tmphead := response.Header.Get(h)
+		if tmphead == "" {
+			continue
+		}
+		if first {
+			res = res + " " + tmphead
+			first = false
+		} else {
+			res = res + " | " + tmphead
+		}
+	}
+	res = res + " ]"
+
+	c <- &result{num, url, response.Status, res}
 }
 
 // readFile returns a string array from path read from start
@@ -97,6 +115,11 @@ func main() {
 	// Handle command line args
 	flag.Usage = usage
 	flag.Parse()
+
+	//fmt.Println(*getHeaders)
+	//fmt.Println(len(headers))
+	//fmt.Println(headers)
+	//return
 
 	runtime.GOMAXPROCS(*numCores)
 
