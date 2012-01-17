@@ -2,12 +2,13 @@
 package main
 
 import (
-	"http"
-	"fmt"
-	"flag"
-	"runtime"
-	"os"
 	"bufio"
+	"flag"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"runtime"
 	"strings"
 )
 
@@ -40,7 +41,7 @@ func geturl_head(num int, url string, c chan *result) {
 
 	if err != nil {
 		if *verbose {
-			c <- &result{num, "", err.String(), ""}
+			c <- &result{num, "", err.Error(), ""}
 		} else {
 			c <- &result{num, "", "err", "err"}
 		}
@@ -73,7 +74,7 @@ func geturl_head(num int, url string, c chan *result) {
 
 // readFile returns a string array from path read from start
 // to eof, removing newlines and if error returns os.Error.
-func readFile(path string) (lines []string, err os.Error) {
+func readFile(path string) (lines []string, err error) {
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -85,7 +86,7 @@ func readFile(path string) (lines []string, err os.Error) {
 
 	for true {
 		line, errr := reader.ReadString('\n')
-		if errr == os.EOF {
+		if errr == io.EOF {
 			break
 		}
 		// Skip empty lines
@@ -94,7 +95,7 @@ func readFile(path string) (lines []string, err os.Error) {
 		}
 		lines = append(lines, line[:len(line)-1])
 	}
-	if err == os.EOF {
+	if err == io.EOF {
 		err = nil
 	}
 	return
@@ -125,7 +126,7 @@ func main() {
 
 	var (
 		urls []string
-		err  os.Error
+		err  error
 	)
 
 	// if we got a file to read urls from
