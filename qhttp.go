@@ -16,7 +16,7 @@ import (
 
 var (
 	inputFileName = flag.String("f", "", "read urls from file")
-	getHeaders    = flag.String("H", "Server", "Which header(s) to show")
+	getHeaders    = flag.String("H", "Server", "Which header(s) to show (Default Server)")
 	numCores      = flag.Int("n", 2, "number of CPU cores to use")
 	verbose       = flag.Bool("v", false, "verbose")
 )
