@@ -117,11 +117,6 @@ func main() {
 	flag.Usage = usage
 	flag.Parse()
 
-	//fmt.Println(*getHeaders)
-	//fmt.Println(len(headers))
-	//fmt.Println(headers)
-	//return
-
 	runtime.GOMAXPROCS(*numCores)
 
 	var (
