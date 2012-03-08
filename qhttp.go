@@ -29,6 +29,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 )
 
 // Command line flags.
@@ -46,6 +47,7 @@ type result struct {
 	url    string
 	info   string
 	server string
+	time time.Duration
 }
 
 func usage() {
@@ -56,13 +58,18 @@ func usage() {
 
 // Do the actual checking of the url
 func geturl_head(num int, url string, c chan *result) {
+
+	t0 := time.Now()
 	response, err := http.Head(url)
+	t1 := time.Now()
+	time := t1.Sub(t0)
+	fmt.Printf("The call took %v to run.\n", time)
 
 	if err != nil {
 		if *verbose {
-			c <- &result{num, "", err.Error(), ""}
+			c <- &result{num, "", err.Error(), "", time}
 		} else {
-			c <- &result{num, "", "err", "err"}
+			c <- &result{num, "", "err", "err", time}
 		}
 		return
 	}
@@ -88,7 +95,7 @@ func geturl_head(num int, url string, c chan *result) {
 	}
 	res = res + " ]"
 
-	c <- &result{num, url, response.Status, res}
+	c <- &result{num, url, response.Status, res, time}
 }
 
 // readFile returns a string array from path read from start
@@ -169,6 +176,6 @@ func main() {
 
 	for i, _ := range urls {
 		res := <-c
-		fmt.Printf("[%d] %s : %s : %s\n", i, urls[res.id], res.info, res.server)
+		fmt.Printf("[%d] %s : %s : %s time=%v\n", i, urls[res.id], res.info, res.server, res.time)
 	}
 }
