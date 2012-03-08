@@ -37,17 +37,17 @@ import (
 var (
 	inputFileName = flag.String("f", "", "read urls from file")
 	getHeaders    = flag.String("H", "Server", "Which header(s) to show (Default Server)")
-	numCores      = flag.Int("n", 2, "number of CPU cores to use")
+	numCores      = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 	verbose       = flag.Bool("v", false, "verbose")
 )
 
 // struct to hold info and results from query
 type result struct {
-	id     int
-	url    string
-	info   string
-	server string
-	time time.Duration
+	id      int
+	url     string
+	info    string
+	headers []string
+	time    time.Duration
 }
 
 func usage() {
@@ -63,13 +63,14 @@ func geturl_head(num int, url string, c chan *result) {
 	response, err := http.Head(url)
 	t1 := time.Now()
 	time := t1.Sub(t0)
-	fmt.Printf("The call took %v to run.\n", time)
+
+	res := &result{}
 
 	if err != nil {
 		if *verbose {
-			c <- &result{num, "", err.Error(), "", time}
+			c <- &result{num, url, err.Error(), []string{}, time}
 		} else {
-			c <- &result{num, "", "err", "err", time}
+			c <- &result{num, url, "err", nil, time}
 		}
 		return
 	}
@@ -78,24 +79,22 @@ func geturl_head(num int, url string, c chan *result) {
 
 	//Get headers to get from flag 
 	headers := strings.Split(*getHeaders, " ")
-	res := "["
-	first := true
 	for _, h := range headers {
 		// Will be empty if no Server header is recieved
 		tmphead := response.Header.Get(h)
 		if tmphead == "" {
 			continue
 		}
-		if first {
-			res = res + " " + tmphead
-			first = false
-		} else {
-			res = res + " | " + tmphead
-		}
+		// Lägga till header i array result.headers
+		res.headers = append(res.headers, tmphead)
 	}
-	res = res + " ]"
 
-	c <- &result{num, url, response.Status, res, time}
+	res.id = num
+	res.url = url
+	res.info = response.Status
+	res.time = time
+	c <- res
+	//c <- &result{num, url, response.Status, res, time}
 }
 
 // readFile returns a string array from path read from start
@@ -166,7 +165,7 @@ func main() {
 		}
 	}
 
-	c := make(chan *result, 100)
+	c := make(chan *result)
 
 	for i, _ := range urls {
 		furl := fixurl(urls[i])
@@ -176,6 +175,6 @@ func main() {
 
 	for i, _ := range urls {
 		res := <-c
-		fmt.Printf("[%d] %s : %s : %s time=%v\n", i, urls[res.id], res.info, res.server, res.time)
+		fmt.Printf("[%d] %s : %s : %s time=%v\n", i, urls[res.id], res.info, res.headers, res.time)
 	}
 }
