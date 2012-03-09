@@ -44,13 +44,13 @@ var (
 	writeCsvFile  = flag.String("w", "", "Write to csv file")
 )
 
-// struct to hold info and results from query
+// struct to hold httpStatus and results from query
 type result struct {
-	id      int    // Simple id
-	url     string // Holds URL of query
-	info    string
-	headers []string
-	time    time.Duration
+	id         int           // Simple id
+	url        string        // Holds URL of query
+	httpStatus string        // HTTP Status Code ex 200 OK
+	headers    []string      // Result of the headers we are interesed in
+	time       time.Duration // The duration the check took
 }
 
 func usage() {
@@ -82,9 +82,9 @@ func geturl_head(num int, url string, c chan *result) {
 	if err != nil {
 		res.headers = nil
 		if *verbose {
-			res.info = err.Error()
+			res.httpStatus = err.Error()
 		} else {
-			res.info = "err"
+			res.httpStatus = "err"
 
 		}
 		c <- res
@@ -103,7 +103,7 @@ func geturl_head(num int, url string, c chan *result) {
 		res.headers = append(res.headers, tmphead)
 	}
 
-	res.info = response.Status
+	res.httpStatus = response.Status
 	c <- res
 }
 
@@ -158,7 +158,7 @@ func NewCsv(filename string) (*csv.Writer, error) {
 
 func writeCsvLine(w *csv.Writer, res *result) {
 	headers_joined := strings.Join(res.headers, ";")
-	record := []string{res.url, res.info, headers_joined, res.time.String()}
+	record := []string{res.url, res.httpStatus, headers_joined, res.time.String()}
 	err := w.Write(record)
 	if err != nil {
 		fmt.Println("Problems writing csv to files")
@@ -219,7 +219,7 @@ func main() {
 	} else {
 		for i, _ := range urls {
 			res := <-c
-			fmt.Printf("[%d] %s : %s : %s time=%v\n", i, urls[res.id], res.info, res.headers, res.time)
+			fmt.Printf("[%d] %s : %s : %s time=%v\n", i, urls[res.id], res.httpStatus, res.headers, res.time)
 		}
 	}
 }
