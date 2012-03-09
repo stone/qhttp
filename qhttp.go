@@ -34,7 +34,6 @@ import (
 )
 
 // Command line flags.
-
 var (
 	inputFileName = flag.String("f", "", "read urls from file")
 	getHeaders    = flag.String("H", "Server", "Which header(s) to show (Default Server)")
@@ -48,11 +47,12 @@ var (
 type result struct {
 	id         int           // Simple id
 	url        string        // Holds URL of query
-	httpStatus string        // HTTP Status Code ex 200 OK
+	httpStatus string        // HTTP Status Code ex 200 OK or error mess
 	headers    []string      // Result of the headers we are interesed in
 	time       time.Duration // The duration the check took
 }
 
+// Print usage information
 func usage() {
 	fmt.Fprintln(os.Stderr, "usage: httpid [flags] url [url...]")
 	flag.PrintDefaults()
@@ -65,6 +65,7 @@ func geturl_head(num int, url string, c chan *result) {
 	t0 := time.Now()
 	var response *http.Response
 	var err error
+	// Depending on methodGet variable we GET or HEAD
 	if *methodGet {
 		response, err = http.Get(url)
 	} else {
@@ -84,7 +85,7 @@ func geturl_head(num int, url string, c chan *result) {
 		if *verbose {
 			res.httpStatus = err.Error()
 		} else {
-			res.httpStatus = "err"
+			res.httpStatus = "000 ERR"
 
 		}
 		c <- res
@@ -136,7 +137,7 @@ func readFile(path string) (lines []string, err error) {
 	return
 }
 
-// fixurl pretty stupid function that checks if
+// Pretty stupid function that checks if
 // url starts with http, if not appends http://
 func fixurl(url string) (furl string) {
 	if url[:4] != "http" {
@@ -147,6 +148,8 @@ func fixurl(url string) (furl string) {
 	return
 }
 
+// Returns a  csv.Writer that we can use to write
+// our lines to.
 func NewCsv(filename string) (*csv.Writer, error) {
 	fd, err := os.Create(filename)
 	if err != nil {
@@ -156,12 +159,13 @@ func NewCsv(filename string) (*csv.Writer, error) {
 	return csv, nil
 }
 
+// Takes a *result struct and writes out lines to *csv.Writer
 func writeCsvLine(w *csv.Writer, res *result) {
 	headers_joined := strings.Join(res.headers, ";")
 	record := []string{res.url, res.httpStatus, headers_joined, res.time.String()}
 	err := w.Write(record)
 	if err != nil {
-		fmt.Println("Problems writing csv to files")
+		fmt.Println("Problems writing to csv file")
 	}
 	w.Flush()
 }
@@ -194,6 +198,7 @@ func main() {
 		}
 	}
 
+	// our channel which we use to communicate via
 	c := make(chan *result)
 
 	for i, _ := range urls {
