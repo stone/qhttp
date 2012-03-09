@@ -54,7 +54,7 @@ type result struct {
 
 // Print usage information
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: httpid [flags] url [url...]")
+	fmt.Fprintln(os.Stderr, "usage: qhttp [flags] url [url...]")
 	flag.PrintDefaults()
 	os.Exit(2)
 }

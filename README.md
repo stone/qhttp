@@ -4,19 +4,20 @@ Query servers in "paralell" (using goroutines) for http headers.
 
 Usage:
 
-    usage: httpid [flags] url [url...]
-        -H="Server": Which header(s) to show
-        -f="": read urls from file
-        -n=2: number of CPU cores to use
-        -v=false: verbose
+    usage: qhttp [flags] url [url...]
+      -H="Server": Which header(s) to show (Default Server)
+      -f="": read urls from file
+      -get=false: Use GET instad of HEAD
+      -n=4: number of CPU cores to use
+      -v=false: verbose
+      -w="": Write to csv file
 
 Example:
+    $ ./qhttp -H="Server Expires" www.reddit.com www.lwn.net
+    [0] http://www.reddit.com : 200 OK : ['; DROP TABLE servertypes; --] time=507.421ms
+    [1] http://www.lwn.net : 200 OK : [Apache -1] time=1.101533s
 
-    stone@ppo2:~$ ./qhttp -H="Server Expires" www.reddit.com www.lwn.net
-    [0] http://www.reddit.com : 200 OK : [ '; DROP TABLE servertypes; -- ]
-    [1] http://www.lwn.net : 200 OK : [ Apache | -1 ]
-
-Note 1: You need the [go][] runtime, <http://golang.org/>
+Note 1: You need the [go][] runtime, <http://golang.org/> (weekly)
 
 Note 2: this is just a toy project in my adventures in the go language, it probably works
 but not the cleanest code around ;) 
