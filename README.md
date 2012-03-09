@@ -13,9 +13,10 @@ Usage:
       -w="": Write to csv file
 
 Example:
-    $ ./qhttp -H="Server Expires" www.reddit.com www.lwn.net
-    [0] http://www.reddit.com : 200 OK : ['; DROP TABLE servertypes; --] time=507.421ms
-    [1] http://www.lwn.net : 200 OK : [Apache -1] time=1.101533s
+    
+     $ ./qhttp -H="Server Expires" www.reddit.com www.lwn.net
+     [0] http://www.reddit.com : 200 OK : ['; DROP TABLE servertypes; --] time=507.421ms
+     [1] http://www.lwn.net : 200 OK : [Apache -1] time=1.101533s
 
 Note 1: You need the [go][] runtime, <http://golang.org/> (weekly)
 
