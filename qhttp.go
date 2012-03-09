@@ -22,6 +22,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"io"
@@ -39,12 +40,14 @@ var (
 	getHeaders    = flag.String("H", "Server", "Which header(s) to show (Default Server)")
 	numCores      = flag.Int("n", runtime.NumCPU(), "number of CPU cores to use")
 	verbose       = flag.Bool("v", false, "verbose")
+	methodGet     = flag.Bool("get", false, "Use GET instad of HEAD")
+	writeCsvFile  = flag.String("w", "", "Write to csv file")
 )
 
 // struct to hold info and results from query
 type result struct {
-	id      int
-	url     string
+	id      int    // Simple id
+	url     string // Holds URL of query
 	info    string
 	headers []string
 	time    time.Duration
@@ -60,21 +63,33 @@ func usage() {
 func geturl_head(num int, url string, c chan *result) {
 
 	t0 := time.Now()
-	response, err := http.Head(url)
+	var response *http.Response
+	var err error
+	if *methodGet {
+		response, err = http.Get(url)
+	} else {
+		response, err = http.Head(url)
+	}
+
 	t1 := time.Now()
 	time := t1.Sub(t0)
 
 	res := &result{}
+	res.id = num
+	res.url = url
+	res.time = time
 
 	if err != nil {
+		res.headers = nil
 		if *verbose {
-			c <- &result{num, url, err.Error(), []string{}, time}
+			res.info = err.Error()
 		} else {
-			c <- &result{num, url, "err", nil, time}
+			res.info = "err"
+
 		}
+		c <- res
 		return
 	}
-
 	defer response.Body.Close()
 
 	//Get headers to get from flag 
@@ -85,16 +100,11 @@ func geturl_head(num int, url string, c chan *result) {
 		if tmphead == "" {
 			continue
 		}
-		// Lägga till header i array result.headers
 		res.headers = append(res.headers, tmphead)
 	}
 
-	res.id = num
-	res.url = url
 	res.info = response.Status
-	res.time = time
 	c <- res
-	//c <- &result{num, url, response.Status, res, time}
 }
 
 // readFile returns a string array from path read from start
@@ -137,6 +147,25 @@ func fixurl(url string) (furl string) {
 	return
 }
 
+func NewCsv(filename string) (*csv.Writer, error) {
+	fd, err := os.Create(filename)
+	if err != nil {
+		return nil, err
+	}
+	csv := csv.NewWriter(fd)
+	return csv, nil
+}
+
+func writeCsvLine(w *csv.Writer, res *result) {
+	headers_joined := strings.Join(res.headers, ";")
+	record := []string{res.url, res.info, headers_joined, res.time.String()}
+	err := w.Write(record)
+	if err != nil {
+		fmt.Println("Problems writing csv to files")
+	}
+	w.Flush()
+}
+
 func main() {
 	// Handle command line args
 	flag.Usage = usage
@@ -173,8 +202,24 @@ func main() {
 		go geturl_head(i, urls[i], c)
 	}
 
-	for i, _ := range urls {
-		res := <-c
-		fmt.Printf("[%d] %s : %s : %s time=%v\n", i, urls[res.id], res.info, res.headers, res.time)
+	if *writeCsvFile != "" {
+		csv, err := NewCsv(*writeCsvFile)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		totalurls := len(urls)
+		for i, _ := range urls {
+			fmt.Printf("query %d of %d done\r", i, totalurls)
+			res := <-c
+			writeCsvLine(csv, res)
+		}
+		fmt.Println("")
+
+	} else {
+		for i, _ := range urls {
+			res := <-c
+			fmt.Printf("[%d] %s : %s : %s time=%v\n", i, urls[res.id], res.info, res.headers, res.time)
+		}
 	}
 }
