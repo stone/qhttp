@@ -162,7 +162,10 @@ func NewCsv(filename string) (*csv.Writer, error) {
 // Takes a *result struct and writes out lines to *csv.Writer
 func writeCsvLine(w *csv.Writer, res *result) {
 	headers_joined := strings.Join(res.headers, ";")
-	record := []string{res.url, res.httpStatus, headers_joined, res.time.String()}
+	// When we save to CSV duration is always in seconds
+	duration_seconds := fmt.Sprintf("%v", res.time.Seconds())
+	// We need a array of strings for the csv package.
+	record := []string{res.url, res.httpStatus, headers_joined, duration_seconds}
 	err := w.Write(record)
 	if err != nil {
 		fmt.Println("Problems writing to csv file")
@@ -215,7 +218,7 @@ func main() {
 
 		totalurls := len(urls)
 		for i, _ := range urls {
-			fmt.Printf("query %d of %d done\r", i, totalurls)
+			fmt.Printf("query %d of %d done\r", i+1, totalurls)
 			res := <-c
 			writeCsvLine(csv, res)
 		}
