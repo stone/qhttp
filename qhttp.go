@@ -98,9 +98,10 @@ func geturl_head(num int, url string, c chan *result) {
 	for _, h := range headers {
 		// Will be empty if no Server header is recieved
 		tmphead := response.Header.Get(h)
-		if tmphead == "" {
+		/* if tmphead == "" {
 			continue
 		}
+		*/
 		res.headers = append(res.headers, tmphead)
 	}
 
@@ -161,7 +162,7 @@ func NewCsv(filename string) (*csv.Writer, error) {
 
 // Takes a *result struct and writes out lines to *csv.Writer
 func writeCsvLine(w *csv.Writer, res *result) {
-	headers_joined := strings.Join(res.headers, ";")
+	headers_joined := strings.Join(res.headers, ",")
 	// When we save to CSV duration is always in seconds
 	duration_seconds := fmt.Sprintf("%v", res.time.Seconds())
 	// We need a array of strings for the csv package.
