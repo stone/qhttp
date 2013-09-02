@@ -1,5 +1,7 @@
 #qhttp - query remote http server headers
 
+[![Build Status](https://drone.io/github.com/stone/qhttp/status.png)](https://drone.io/github.com/stone/qhttp/latest)
+
 Query servers in "paralell" (using goroutines) for http headers.
 
 Usage:
